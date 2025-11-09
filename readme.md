@@ -86,7 +86,7 @@ Role-Aware Filtering: Distill GPT-5's judgment to filter inaccurate/role-inconsi
 CLIP Training: Extend positional embeddings for long captions and use multi-positive contrastive loss
 
 ### 📁 Project Structure
-plaintext
+```plaintext
 Role-SynthCLIP/
 ├── scripts/                # Utility scripts
 │   ├── generate_captions.py  # Role-based caption generation
@@ -97,8 +97,9 @@ Role-SynthCLIP/
 │   └── role_aware_filter.py # Filter model
 ├── train.py                # Main training script
 ├── evaluate.py             # Evaluation script
-  ├── requirements.txt        # Dependencies
-  └── configs/                # Training configurations
+├── requirements.txt        # Dependencies
+└── configs/                # Training configurations
+```
 
 ### 🎯 Key Hyperparameters
 Parameter	Value	Description
