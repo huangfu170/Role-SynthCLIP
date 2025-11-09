@@ -1,0 +1,11 @@
+einops
+omegaconf
+pytorch-lightning==2.4.0
+torchmetrics==0.11.4
+kornia
+open-clip-torch
+wandb
+braceexpand
+webdataset
+pandas
+submitit
