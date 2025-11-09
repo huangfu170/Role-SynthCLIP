@@ -11,25 +11,31 @@ Robust Generalization: Excels on out-of-distribution (OOD) tasks, demonstrating 
 **📖 Abstract**
 Contrastive Language-Image Pretraining (CLIP) models rely heavily on the semantic diversity and quality of training data. Existing synthetic data methods focus on volume but lack diversity, leading to redundant captions. Role-SynthCLIP addresses this by guiding Multimodal Large Language Models (MLLMs) with role-playing prompts (e.g., Compositional Analyst, Narrative Setter) to generate fine-grained, multi-perspective image-text pairs. This approach improves caption expressiveness and alignment without increasing data volume, enabling efficient VLM training with limited resources.
 **🚀 Quick Start**
-Installation
-Clone the repository
-bash
+**Installation**
+
+```bash
 git clone https://github.com/huangfu170/Role-SynthCLIP.git
 cd Role-SynthCLIP
-Install dependencies
-bash
+```
+
+```bash
 pip install -r requirements.txt
-Data Preparation
+```
+
+**Data Preparation**
 Training Data: We use the ShareGPT4V dataset (1M images) for training. Download it from ShareGPT4V Official
 Synthetic Caption Generation: Run the role-based caption generation pipeline
-bash
+```bash
 python scripts/generate_captions.py --image_dir path/to/sharegpt4v/images --output_dir data/synthetic_captions
+```
+
 Filtering: Apply Role-Aware Filter to clean noisy pairs
-bash
+```bash
 python scripts/role_aware_filter.py --input_dir data/synthetic_captions --output_dir data/filtered_pairs
+```
 Model Training
 Train Role-SynthCLIP with CLIP-B/16 (default configuration)
-bash
+```bash
 python train.py \
   --data_path data/filtered_pairs \
   --model_type clip-b16 \
@@ -37,25 +43,35 @@ python train.py \
   --epochs 6 \
   --lr 1e-6 \
   --output_dir checkpoints/role-synthclip-b16
-Evaluation
+```
+
+**Evaluation**
 Evaluate zero-shot retrieval on MS COCO
-bash
+```bash
 python evaluate.py \
   --model_path checkpoints/role-synthclip-b16 \
   --dataset coco \
   --split val \
   --metric recall@1
-📊 Experimental Results
-Zero-shot Retrieval (Recall@1)
-Model	Data Size	MS COCO (I→T)	MS COCO (T→I)	Avg
-CLIP-B/16	400M	53.1	32.7	58.87
-FIX-CLIP	5M	61.3	47.0	75.95
-Role-SynthCLIP	1M	64.1	43.2	77.01
-Zero-shot Classification (Top-1 Accuracy)
-Model	ImageNet-1k	ImageNet-O	CIFAR-100	Avg
-CLIP-B/16	68.3	40.4	66.7	70.30
-Role-SynthCLIP	64.8	44.5	68.2	69.62
-🔧 Core Components
+```
+
+**📊 Experimental Results**
+### Zero-shot Retrieval (Recall@1)
+
+| Model | Data Size | MS COCO (I→T) | MS COCO (T→I) | Avg |
+|-------|-----------|---------------|---------------|-----|
+| CLIP-B/16 | 400M | 53.1 | 32.7 | 58.87 |
+| FIX-CLIP | 5M | 61.3 | 47.0 | 75.95 |
+| Role-SynthCLIP | 1M | 64.1 | 43.2 | 77.01 |
+
+### Zero-shot Classification (Top-1 Accuracy)
+
+| Model | ImageNet-1k | ImageNet-O | CIFAR-100 | Avg |
+|-------|-------------|------------|-----------|-----|
+| CLIP-B/16 | 68.3 | 40.4 | 66.7 | 70.30 |
+| Role-SynthCLIP | 64.8 | 44.5 | 68.2 | 69.62 |
+
+### 🔧 Core Components
 1. Expert Roles
 Role-SynthCLIP uses 5 complementary expert roles to generate diverse captions:
 Observer of Details: Focuses on micro-level visual attributes (objects, colors, textures)
@@ -68,7 +84,8 @@ Expert Role Generation: Define structured roles with specialized prompts
 Multi-Perspective Captioning: Use Qwen2.5 VL to generate role-aligned captions
 Role-Aware Filtering: Distill GPT-5's judgment to filter inaccurate/role-inconsistent pairs
 CLIP Training: Extend positional embeddings for long captions and use multi-positive contrastive loss
-📁 Project Structure
+
+### 📁 Project Structure
 plaintext
 Role-SynthCLIP/
 ├── scripts/                # Utility scripts
@@ -80,16 +97,18 @@ Role-SynthCLIP/
 │   └── role_aware_filter.py # Filter model
 ├── train.py                # Main training script
 ├── evaluate.py             # Evaluation script
-├── requirements.txt        # Dependencies
-└── configs/                # Training configurations
-🎯 Key Hyperparameters
+  ├── requirements.txt        # Dependencies
+  └── configs/                # Training configurations
+
+### 🎯 Key Hyperparameters
 Parameter	Value	Description
 Global Batch Size	2048	Training batch size
 Epochs	6	Number of training epochs
 Learning Rate	1e-6	Initial learning rate
 Weight Decay	1e-2	Weight decay for regularization
 Max Sequence Len	248	Extended text sequence length
-📚 Citation
+
+### 📚 Citation
 If you use this work, please cite our paper:
 bibtex
 @article{huangfu2025rolesynthclip,
@@ -100,7 +119,8 @@ bibtex
 }
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
-🤝 Contact
+
+### 🤝 Contact
 For questions or issues, please open an issue or contact:
 Yuanxiang Huangfu: huangfuyuanxiang@patsnap.com
 Chaochao Wang: wangchaochao@patsnap.com
