@@ -1,5 +1,8 @@
 [![](https://raw.githubusercontent.com/SwanHubX/assets/main/badge1.svg)](https://swanlab.cn/@yxhuangfu/Role-SynthCLIP/overview)
 
+## NOTE: This repository is still under development.
+
+
 Official implementation of **Role-SynthCLIP**, a novel data synthesis framework that leverages multi-perspective role-playing prompts to generate semantically diverse captions for vision-language model (VLM) training.
 
 **🌟 Key Highlights**
@@ -10,7 +13,12 @@ Robust Generalization: Excels on out-of-distribution (OOD) tasks, demonstrating 
 
 **📖 Abstract**
 Contrastive Language-Image Pretraining (CLIP) models rely heavily on the semantic diversity and quality of training data. Existing synthetic data methods focus on volume but lack diversity, leading to redundant captions. Role-SynthCLIP addresses this by guiding Multimodal Large Language Models (MLLMs) with role-playing prompts (e.g., Compositional Analyst, Narrative Setter) to generate fine-grained, multi-perspective image-text pairs. This approach improves caption expressiveness and alignment without increasing data volume, enabling efficient VLM training with limited resources.
-**🚀 Quick Start**
+
+### 📰 NEWS
+- [2025-11-10] The paper, data and model weights are released.
+
+
+### 🚀 Quick Start
 **Installation**
 
 ```bash
@@ -23,8 +31,12 @@ pip install -r requirements.txt
 ```
 
 **Data Preparation**
-Training Data: We use the ShareGPT4V dataset (1M images) for training. Download it from ShareGPT4V Official
-Synthetic Caption Generation: Run the role-based caption generation pipeline
+
+**Training Data**: We use the ShareGPT4V dataset (1M images) for training. Download it from ShareGPT4V Official
+Synthetic Caption Generation: Run the role-based caption generation pipeline.
+
+**Trained Model Weight** : [Role-SynthCLIP-B-patch16](https://huggingface.co/aiLifeAgain/Role-SynthCLIP-B-patch16) and [Role-SynthCLIP-L-patch16](https://huggingface.co/aiLifeAgain/Role-SynthCLIP-L-patch16)
+
 ```bash
 python scripts/generate_captions.py --image_dir path/to/sharegpt4v/images --output_dir data/synthetic_captions
 ```
@@ -33,7 +45,8 @@ Filtering: Apply Role-Aware Filter to clean noisy pairs
 ```bash
 python scripts/role_aware_filter.py --input_dir data/synthetic_captions --output_dir data/filtered_pairs
 ```
-Model Training
+
+**Model Training**
 Train Role-SynthCLIP with CLIP-B/16 (default configuration)
 ```bash
 python train.py \
@@ -74,11 +87,11 @@ python evaluate.py \
 ### 🔧 Core Components
 1. Expert Roles
 Role-SynthCLIP uses 5 complementary expert roles to generate diverse captions:
-Observer of Details: Focuses on micro-level visual attributes (objects, colors, textures)
-Interpreter of Context: Interprets situational meaning, human expressions, and cultural references
-Compositional Analyst: Analyzes macro-level structure (spatial relationships, balance, perspective)
-Narrative Setter: Synthesizes details into a coherent story or scene context
-Emotional Responder: Captures mood, atmosphere, and aesthetic qualities
+**Observer of Details**: Focuses on micro-level visual attributes (objects, colors, textures)
+**Interpreter of Context**: Interprets situational meaning, human expressions, and cultural references
+**Compositional Analyst**: Analyzes macro-level structure (spatial relationships, balance, perspective)
+**Narrative Setter**: Synthesizes details into a coherent story or scene context
+**Emotional Responder**: Captures mood, atmosphere, and aesthetic qualities
 2. Framework Pipeline
 Expert Role Generation: Define structured roles with specialized prompts
 Multi-Perspective Captioning: Use Qwen2.5 VL to generate role-aligned captions
@@ -102,22 +115,27 @@ Role-SynthCLIP/
 ```
 
 ### 🎯 Key Hyperparameters
-Parameter	Value	Description
-Global Batch Size	2048	Training batch size
-Epochs	6	Number of training epochs
-Learning Rate	1e-6	Initial learning rate
-Weight Decay	1e-2	Weight decay for regularization
-Max Sequence Len	248	Extended text sequence length
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| Global Batch Size | 2048 | Training batch size |
+| Epochs | 6 | Number of training epochs |
+| Learning Rate | 1e-6 | Initial learning rate |
+| Weight Decay | 1e-2 | Weight decay for regularization |
+| Max Sequence Len | 248 | Extended text sequence length |
 
 ### 📚 Citation
 If you use this work, please cite our paper:
-bibtex
-@article{huangfu2025rolesynthclip,
-  title={Role-SynthCLIP: A Role Play Driven Diverse Synthetic Data Approach},
-  author={Huangfu, Yuanxiang and Wang, Chaochao and Wang, Weilei},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
-  year={2025}
+```bibtex
+@misc{huangfu2025rolesynthcliproleplaydriven,
+      title={Role-SynthCLIP: A Role Play Driven Diverse Synthetic Data Approach}, 
+      author={Yuanxiang Huangfu and Chaochao Wang and Weilei Wang},
+      year={2025},
+      eprint={2511.05057},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2511.05057}, 
 }
+```
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 

@@ -53,7 +53,7 @@ config = {
     "batch_size": 256,
     "learning_rate": 1e-6,
     "weight_decay": 0.01,
-    "log_project_dir": "sharedGPTmix5roleplayp4shortlongpatch16_bs2048_context_window248_filtered_gather_large",
+    "log_project_dir": "multipositive_gather_large",
 }
 
 def parse_args_and_update_config(config_dict):
