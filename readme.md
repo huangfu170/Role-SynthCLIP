@@ -142,5 +142,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ### 🤝 Contact
 For questions or issues, please open an issue or contact:
 Yuanxiang Huangfu: huangfuyuanxiang@patsnap.com
-Chaochao Wang: wangchaochao@patsnap.com
-Would you like me to add more details, such as a troubleshooting section, dataset download instructions, or visualization examples? I can also help refine the script commands or add a demo section for quick testing.
