@@ -3,28 +3,6 @@ import torch
 import os
 from pathlib import Path
 
-def resolve_root_dir():
-    env_root = os.environ.get("ROLE_SYNTHCLIP_ROOT")
-    if env_root:
-        return Path(env_root)
-
-    current = Path(__file__).resolve()
-    for parent in current.parents:
-        if parent.name == "cpfs-data":
-            return parent
-
-    for parent in current.parents:
-        if (parent / "data").exists() and (parent / "models").exists():
-            return parent
-
-    parents = list(current.parents)
-    return parents[-1] if parents else current
-
-
-ROOT_DIR = resolve_root_dir()
-DATA_DIR = ROOT_DIR / "data"
-MODELS_DIR = ROOT_DIR / "models"
-
 def compute_metrics_for_multicaption(image_features, text_features,captions_per_image = 1):
     """计算 MS COCO 数据集的 Recall@K 指标，处理每个图像有5个标题的情况"""
     metrics = {}

@@ -35,7 +35,14 @@ pip install -r requirements.txt
 **Training Data**: We use the ShareGPT4V dataset (1M images) for training. Download it from ShareGPT4V Official
 Synthetic Caption Generation: Run the role-based caption generation pipeline.
 
+You can refer the Long-CLIP repository for the download details. For the SA-1B dataset, We only use the first 40 files.
+
+The final used in our training can be download at [Role-SynthCLIP-Filtered Dataset](https://huggingface.co/datasets/aiLifeAgain/Role-SynthCLIP-train) and put it in data/traindataset/ folder.
+
+The test dataset (except Cifar 10, 100, which can be found at the huggingface official repos) can be download at [Role-SynthCLIP-Test Dataset](https://huggingface.co/datasets/aiLifeAgain/Role-SynthCLIP-testdataset) and put it in data/testdatasets/ folder.
+
 **Trained Model Weight** : [Role-SynthCLIP-B-patch16](https://huggingface.co/aiLifeAgain/Role-SynthCLIP-B-patch16) and [Role-SynthCLIP-L-patch16](https://huggingface.co/aiLifeAgain/Role-SynthCLIP-L-patch16)
+
 
 ```bash
 python scripts/generate_captions.py --image_dir path/to/sharegpt4v/images --output_dir data/synthetic_captions
@@ -49,13 +56,7 @@ python scripts/role_aware_filter.py --input_dir data/synthetic_captions --output
 **Model Training**
 Train Role-SynthCLIP with CLIP-B/16 (default configuration)
 ```bash
-python train.py \
-  --data_path data/filtered_pairs \
-  --model_type clip-b16 \
-  --batch_size 256 \
-  --epochs 6 \
-  --lr 1e-6 \
-  --output_dir checkpoints/role-synthclip-b16
+bash scripts/train.sh
 ```
 
 **Evaluation**

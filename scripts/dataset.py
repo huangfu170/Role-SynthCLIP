@@ -112,13 +112,13 @@ class ImageNetClassificationDataset(Dataset):
         assert dataset_type in ['imagenet-1k','imagenet-o','imagenet-v2']
         if dataset_type == 'imagenet-1k':
             from data.imagenet_1k.classes import imagenet_classes
-            class_txt_name = DATA_DIR / "clip_train" / "data" / "imagenet_1k" / "classes.txt"
+            class_txt_name = DATA_DIR / "testdataset" /  "imagenet_1k" / "classes.txt"
         elif dataset_type == 'imagenet-o':
             from data.imagenet_o.classes import imagenet_classes
-            class_txt_name = DATA_DIR / "clip_train" / "data" / "imagenet_o" / "classes.txt"
+            class_txt_name = DATA_DIR / "testdataset" /  "imagenet_o" / "classes.txt"
         elif dataset_type == 'imagenet-v2': 
             from data.imagenet_v2.classes import imagenet_classes
-            class_txt_name = DATA_DIR / "clip_train" / "data" / "imagenet_v2" / "classes.txt"
+            class_txt_name = DATA_DIR / "testdataset" /  "imagenet_v2" / "classes.txt"
         else:
             raise Exception('The dataset is not supported')
         with open(class_txt_name,'r',encoding='utf-8') as f:
@@ -154,11 +154,11 @@ class CIFarClassificationDataset(Dataset):
     def __init__(self,dataset_type):
         assert dataset_type in ['cifar-10','cifar-100']
         if dataset_type == 'cifar-10':
-            self.data = load_dataset(str(DATA_DIR / "datasets" / "cifar-10"),split='test')
+            self.data = load_dataset(str(DATA_DIR / "testdataset" / "cifar-10"),split='test')
             self.classnames = self.data.info.features['label'].names
             self.label_idx_key = 'label'
         elif dataset_type == 'cifar-100':
-            self.data = load_dataset(str(DATA_DIR / "datasets" / "cifar100"),split='test')
+            self.data = load_dataset(str(DATA_DIR / "testdataset" / "cifar100"),split='test')
             self.classnames = self.data.info.features['fine_label'].names
             self.label_idx_key = 'fine_label'
         else: 
@@ -232,6 +232,6 @@ class Food101ClassificationDataset(Dataset):
 
 if __name__ == '__main__':
     # ImageNetClassificationDataset(DATA_DIR / "datasets" / "imagenet-val",'imagenet-1k')
-    dataset = Food101ClassificationDataset(DATA_DIR / "datasets" / "Food101" / "images")
+    dataset = Food101ClassificationDataset(DATA_DIR / "testdataset" / "Food101" / "images")
     print(dataset.classnames)
     print(dataset[12])

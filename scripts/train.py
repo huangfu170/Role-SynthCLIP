@@ -40,17 +40,16 @@ MODELS_DIR = ROOT_DIR / "models"
 # 1. 原始配置字典（作为默认值和后备值）
 config = {
     "model_path": str(MODELS_DIR / "clip-vit-base-patch16"),
-    "train_csv_path": str(DATA_DIR / "clip_train" / "data" / "MLM_filter_qwenSharedGPT4V_filter_train_checked.csv"),
-    "coco_test_csv_path": str(DATA_DIR / "clip_train" / "data" / "coco_official.csv"),
-    "train_images_folder": str(DATA_DIR / "datasets" / "sharedGPT4V"),
-    "test_images_folder": str(DATA_DIR / "clip_train" / "images" / "val2017"),
-    "coco_test_image_folder": str(DATA_DIR / "datasets" / "coco2017" / "val2017"),
-    "flickr_image_folder": str(DATA_DIR / "datasets" / "Flickr30K" / "test" / "images_flickr_1k_test"),
-    "flickr_test_csv_path": str(DATA_DIR / "clip_train" / "data" / "flickr_official.csv"),
-    "urban1k_image_folder": str(DATA_DIR / "datasets" / "Urban1k" / "image"),
-    "urban1k_test_csv_path": str(DATA_DIR / "clip_train" / "data" / "urban_1k.csv"),
+    "train_csv_path": str(DATA_DIR / "traindataset" / "MLM_filter_qwenSharedGPT4V_filter_train_checked.csv"),
+    "train_images_folder": str(DATA_DIR / "traindataset" / "sharedGPT4V"),
+    "coco_test_csv_path": str(DATA_DIR / "testdatasets" / "data" / "coco_official.csv"),
+    "coco_test_image_folder": str(DATA_DIR / "testdatasets" / "coco2017" / "images" ),
+    "flickr_image_folder": str(DATA_DIR / "testdatasets" / "Flickr30K" /  "images_flickr_1k_test"),
+    "flickr_test_csv_path": str(DATA_DIR / "testdatasets" / "Flickr30K" / "flickr_official.csv"),
+    "urban1k_image_folder": str(DATA_DIR / "testdatasets" / "Urban1k" / "image"),
+    "urban1k_test_csv_path": str(DATA_DIR / "testdatasets" / "Urban1k" / "urban_1k.csv"),
     "num_epochs": 6,
-    "batch_size": 256,
+    "batch_size": 256, # batch size per gpu, global size is batch_size * num_gpus * gradient_accumulation_steps
     "learning_rate": 1e-6,
     "weight_decay": 0.01,
     "log_project_dir": "multipositive_gather_large",
@@ -67,12 +66,10 @@ def parse_args_and_update_config(config_dict):
                         help=f"本地预训练模型路径 (默认: {config_dict['model_path']})")
     parser.add_argument("--train_csv_path", type=str, default=config_dict["train_csv_path"],
                         help=f"训练数据CSV文件路径 (默认: {config_dict['train_csv_path']})")
-    parser.add_argument("--coco_test_csv_path", type=str, default=config_dict["coco_test_csv_path"],
-                        help=f"COCO测试集CSV文件路径 (默认: {config_dict['coco_test_csv_path']})")
     parser.add_argument("--train_images_folder", type=str, default=config_dict["train_images_folder"],
                         help=f"训练图片存放的根目录 (默认: {config_dict['train_images_folder']})")
-    parser.add_argument("--test_images_folder", type=str, default=config_dict["test_images_folder"],
-                        help=f"测试图片存放的根目录 (默认: {config_dict['test_images_folder']})")
+    parser.add_argument("--coco_test_csv_path", type=str, default=config_dict["coco_test_csv_path"],
+                        help=f"COCO测试集CSV文件路径 (默认: {config_dict['coco_test_csv_path']})")
     parser.add_argument("--coco_test_image_folder", type=str, default=config_dict["coco_test_image_folder"],
                         help=f"COCO测试图片存放的根目录 (默认: {config_dict['coco_test_image_folder']})")
     parser.add_argument("--flickr_image_folder", type=str, default=config_dict["flickr_image_folder"],
@@ -250,12 +247,12 @@ def main():
             csv_path=config["urban1k_test_csv_path"],
             images_folder=config["urban1k_image_folder"]
         )
-        test_imagenet1k_dataset=ImageNetClassificationDataset(DATA_DIR / "datasets" / "imagenet-val","imagenet-1k")
-        test_imageneto_dataset=ImageNetClassificationDataset(DATA_DIR / "datasets" / "imagenet-o","imagenet-o")
-        test_imageneta_dataset=ImageNetClassificationDataset(DATA_DIR / "datasets" / "imagenet-v2","imagenet-v2")
-        food101_dataset=Food101ClassificationDataset(DATA_DIR / "datasets" / "Food101" / "images")
-        test_cifar10_dataset=CIFarClassificationDataset('cifar-10')
-        test_cifar100_dataset=CIFarClassificationDataset('cifar-100')
+        test_imagenet1k_dataset=ImageNetClassificationDataset(DATA_DIR / "testdataset" / "imagenet-val","imagenet-1k")
+        test_imageneto_dataset=ImageNetClassificationDataset(DATA_DIR / "testdataset" / "imagenet-o","imagenet-o")
+        test_imageneta_dataset=ImageNetClassificationDataset(DATA_DIR / "testdataset" / "imagenet-v2","imagenet-v2")
+        food101_dataset=Food101ClassificationDataset(DATA_DIR / "testdataset" / "Food101" / "images")
+        test_cifar10_dataset=CIFarClassificationDataset(DATA_DIR / "testdataset" / "cifar-10")
+        test_cifar100_dataset=CIFarClassificationDataset(DATA_DIR / "testdataset" / "cifar-100")
         datasets = {
             "coco": test_coco_dataset,
             "flickr-1k": test_flickr_dataset,
