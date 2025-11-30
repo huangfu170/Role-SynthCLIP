@@ -7,27 +7,6 @@ from PIL import Image
 from pathlib import Path
 from torchvision.datasets import ImageFolder
 
-def resolve_root_dir():
-    env_root = os.environ.get("ROLE_SYNTHCLIP_ROOT")
-    if env_root:
-        return Path(env_root)
-
-    current = Path(__file__).resolve()
-    for parent in current.parents:
-        if parent.name == "cpfs-data":
-            return parent
-
-    for parent in current.parents:
-        if (parent / "data").exists() and (parent / "models").exists():
-            return parent
-
-    parents = list(current.parents)
-    return parents[-1] if parents else current
-
-
-ROOT_DIR = resolve_root_dir()
-DATA_DIR = ROOT_DIR / "data"
-MODELS_DIR = ROOT_DIR / "models"
 
 class ImageTextDataset(Dataset):
     """自定义数据集类，用于读取图片和文本"""
@@ -231,6 +210,6 @@ class Food101ClassificationDataset(Dataset):
 
 if __name__ == '__main__':
     # ImageNetClassificationDataset(DATA_DIR / "datasets" / "imagenet-val",'imagenet-1k')
-    dataset = Food101ClassificationDataset(DATA_DIR / "testdataset" / "Food101")
+    dataset = Food101ClassificationDataset(str("data" / "testdataset" / "Food101"))
     print(dataset.classnames)
     print(dataset[12])
