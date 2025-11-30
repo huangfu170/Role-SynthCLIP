@@ -1,26 +1,19 @@
-import os
 import torch
 import pandas as pd
 from PIL import Image
 from pathlib import Path
-# from tqdm.auto import tqdm
 from typing import Dict, List
-import deepspeed
 from swanlab.integration.accelerate import SwanLabTracker
 # 核心库
 tracker = SwanLabTracker("Role-SynthCLIP",init_kwargs={"swanlab": {"experiment_name": "multi_positive_clip_base"}})
 
-from datasets import load_dataset
 from transformers import CLIPProcessor, get_scheduler,CLIPModel,CLIPTokenizer
-from accelerate import Accelerator, notebook_launcher,ProfileKwargs
+from accelerate import Accelerator
 from torch.utils.data import DataLoader,Dataset
 import torch.nn.functional as F
-from accelerate.utils import tqdm
 from retrieval_inference import inference
 from classification_inference import inference_classification
 import logging
-import swifter
-from timm.optim.lamb import Lamb
 from PIL import ImageFile
 from utils import add_prefix_to_keys
 from dataset import ImageTextDataset, SharedGPT4VDatset, ImageNetClassificationDataset, CIFarClassificationDataset,Food101ClassificationDataset
@@ -31,7 +24,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 # =====================================================================================
 # 您可以在这里修改所有参数
 import argparse
-import json
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR / "data"
@@ -41,13 +33,19 @@ MODELS_DIR = ROOT_DIR / "models"
 config = {
     "model_path": str(MODELS_DIR / "clip-vit-base-patch16"),
     "train_csv_path": str(DATA_DIR / "traindataset" / "MLM_filter_qwenSharedGPT4V_filter_train_checked.csv"),
-    "train_images_folder": str(DATA_DIR / "traindataset" / "sharedGPT4V"),
-    "coco_test_csv_path": str(DATA_DIR / "testdatasets" / "data" / "coco_official.csv"),
-    "coco_test_image_folder": str(DATA_DIR / "testdatasets" / "coco2017" / "images" ),
-    "flickr_image_folder": str(DATA_DIR / "testdatasets" / "Flickr30K" /  "images_flickr_1k_test"),
-    "flickr_test_csv_path": str(DATA_DIR / "testdatasets" / "Flickr30K" / "flickr_official.csv"),
-    "urban1k_image_folder": str(DATA_DIR / "testdatasets" / "Urban1k" / "image"),
-    "urban1k_test_csv_path": str(DATA_DIR / "testdatasets" / "Urban1k" / "urban_1k.csv"),
+    "train_images_folder": str(DATA_DIR / "traindataset" / "ShareGPT4V"),
+    "coco_test_csv_path": str(DATA_DIR / "testdataset" / "COCO" / "coco_official.csv"),
+    "coco_test_image_folder": str(DATA_DIR / "testdataset" / "COCO" / "images"),
+    "flickr_image_folder": str(DATA_DIR / "testdataset" / "Flickr" / "images"),
+    "flickr_test_csv_path": str(DATA_DIR / "testdataset" / "Flickr" / "flickr_official.csv"),
+    "urban1k_image_folder": str(DATA_DIR / "testdataset" / "Urban" / "images"),
+    "urban1k_test_csv_path": str(DATA_DIR / "testdataset" / "Urban" / "urban_1k.csv"),
+    "imagenet1k_dir": str(DATA_DIR / "testdataset" / "ImageNet-1K"),
+    "imageneto_dir": str(DATA_DIR / "testdataset" / "ImageNet-O"),
+    "imagenetv2_dir": str(DATA_DIR / "testdataset" / "ImageNet-V2"),
+    "food101_dir": str(DATA_DIR / "testdataset" / "Food101"),
+    "cifar10_dir": str(DATA_DIR / "testdataset" / "CIFAR-10"),
+    "cifar100_dir": str(DATA_DIR / "testdataset" / "CIFAR-100"),
     "num_epochs": 6,
     "batch_size": 256, # batch size per gpu, global size is batch_size * num_gpus * gradient_accumulation_steps
     "learning_rate": 1e-6,
@@ -80,6 +78,18 @@ def parse_args_and_update_config(config_dict):
                         help=f"Urban1k测试图片存放的根目录 (默认: {config_dict['urban1k_image_folder']})")
     parser.add_argument("--urban1k_test_csv_path", type=str, default=config_dict["urban1k_test_csv_path"],
                         help=f"Urban1k测试集CSV文件路径 (默认: {config_dict['urban1k_test_csv_path']})")
+    parser.add_argument("--imagenet1k_dir", type=str, default=config_dict["imagenet1k_dir"],
+                        help=f"ImageNet-1K数据集目录 (默认: {config_dict['imagenet1k_dir']})")
+    parser.add_argument("--imageneto_dir", type=str, default=config_dict["imageneto_dir"],
+                        help=f"ImageNet-O数据集目录 (默认: {config_dict['imageneto_dir']})")
+    parser.add_argument("--imagenetv2_dir", type=str, default=config_dict["imagenetv2_dir"],
+                        help=f"ImageNet-V2数据集目录 (默认: {config_dict['imagenetv2_dir']})")
+    parser.add_argument("--food101_dir", type=str, default=config_dict["food101_dir"],
+                        help=f"Food101数据集目录 (默认: {config_dict['food101_dir']})")
+    parser.add_argument("--cifar10_dir", type=str, default=config_dict["cifar10_dir"],
+                        help=f"CIFAR-10数据集目录 (默认: {config_dict['cifar10_dir']})")
+    parser.add_argument("--cifar100_dir", type=str, default=config_dict["cifar100_dir"],
+                        help=f"CIFAR-100数据集目录 (默认: {config_dict['cifar100_dir']})")
     parser.add_argument("--log_project_dir", type=str, default=config_dict["log_project_dir"],
                         help=f"TensorBoard 日志保存目录 (默认: {config_dict['log_project_dir']})")
 
@@ -113,9 +123,6 @@ logger.setLevel(logging.INFO)
 # =====================================================================================
 # 2. 数据集预处理
 # =====================================================================================
-
-import torch
-import torch.nn.functional as F
 
 def expand_positional_embedding(positional_embedding_pre, keep_len=20):
     length, dim = positional_embedding_pre.shape
@@ -211,8 +218,6 @@ def main():
         tokenizer = CLIPTokenizer.from_pretrained(config["model_path"])
         model = CLIPModel.from_pretrained(config["model_path"])
 
-        # for name,_ in model.named_parameters():
-        #     print(name)
         original_pos_embed=model.text_model.embeddings.position_embedding.weight
         posisitonal_embedding_new = expand_positional_embedding(
             original_pos_embed
@@ -247,12 +252,12 @@ def main():
             csv_path=config["urban1k_test_csv_path"],
             images_folder=config["urban1k_image_folder"]
         )
-        test_imagenet1k_dataset=ImageNetClassificationDataset(DATA_DIR / "testdataset" / "imagenet-val","imagenet-1k")
-        test_imageneto_dataset=ImageNetClassificationDataset(DATA_DIR / "testdataset" / "imagenet-o","imagenet-o")
-        test_imageneta_dataset=ImageNetClassificationDataset(DATA_DIR / "testdataset" / "imagenet-v2","imagenet-v2")
-        food101_dataset=Food101ClassificationDataset(DATA_DIR / "testdataset" / "Food101" / "images")
-        test_cifar10_dataset=CIFarClassificationDataset(DATA_DIR / "testdataset" / "cifar-10")
-        test_cifar100_dataset=CIFarClassificationDataset(DATA_DIR / "testdataset" / "cifar-100")
+        test_imagenet1k_dataset=ImageNetClassificationDataset(config["imagenet1k_dir"],"imagenet-1k")
+        test_imageneto_dataset=ImageNetClassificationDataset(config["imageneto_dir"],"imagenet-o")
+        test_imageneta_dataset=ImageNetClassificationDataset(config["imagenetv2_dir"],"imagenet-v2")
+        food101_dataset=Food101ClassificationDataset(config["food101_dir"])
+        test_cifar10_dataset=CIFarClassificationDataset(config["cifar10_dir"])
+        test_cifar100_dataset=CIFarClassificationDataset(config["cifar100_dir"])
         datasets = {
             "coco": test_coco_dataset,
             "flickr-1k": test_flickr_dataset,
@@ -296,7 +301,7 @@ def main():
                 num_workers=5
             )
     except FileNotFoundError:
-        accelerator.print(f"错误: 找不到CSV数据文件。请检查路径 '{config['train_csv_path']}' 和 '{config['test_csv_path']}'.")
+        accelerator.print(f"错误: 找不到CSV数据文件。请检查路径 '{config['train_csv_path']}'.")
         return
     # ---- 优化器和学习率调度器 ----
     optimizer = torch.optim.AdamW(
@@ -304,29 +309,6 @@ def main():
         lr=config["learning_rate"],
         weight_decay=config["weight_decay"]
     )
-    visual_params = []
-    text_params = []
-
-    for name, param in model.named_parameters():
-        # print(name)
-        if 'visual_projection' in name or 'vision_model' in name or 'logit_scale' in name:
-            visual_params.append(param)
-        elif 'text_projection' in name or 'text_model' in name:
-            text_params.append(param)
-    # 为每个参数组定义不同的学习率
-    visual_lr = 1e-6  # 例如，视觉编码器的学习率设为1e-5
-    text_lr = 1e-5   # 例如，文本编码器的学习率设为1e-4
-
-    # 创建一个参数组列表
-    optimizer_grouped_parameters = [
-        {'params': visual_params, 'lr': visual_lr},
-        {'params': text_params, 'lr': text_lr}
-    ]
-    # optimizer=Lamb(
-    #     model.parameters(), 
-    #     lr=config["learning_rate"],
-    #     weight_decay=config["weight_decay"]
-    # )
     num_training_steps = config["num_epochs"] * len(train_dataloader)
     lr_scheduler = get_scheduler(
         "cosine",
@@ -334,29 +316,15 @@ def main():
         num_warmup_steps=200,
         num_training_steps=num_training_steps
     )
-    # lr_scheduler=deepspeed.runtime.lr_schedules.WarmupCosineLR(
-    #     optimizer=optimizer, 
-    #     warmup_num_steps=10,
-    #     total_num_steps=num_training_steps
-
-    # )
-    print("----------------------------------------------",lr_scheduler)
-    # print(f"Pre: {len(train_dataloader)}")
+    
     # ---- 使用 `accelerator.prepare` ----
     # 这是 accelerate 的核心！它会处理模型、优化器和数据加载器的设备分配和分布式设置
     model, optimizer, train_dataloader, *prepared_dataloaders, lr_scheduler = accelerator.prepare(
         model, optimizer, train_dataloader, *dataloaders.values(),lr_scheduler
     )
-    # model, optimizer, *prepared_dataloaders, lr_scheduler = accelerator.prepare(
-    #     model, optimizer, *dataloaders.values(),lr_scheduler
-    # )
-    i=0
-    for k,v in dataloaders.items():
-        dataloaders[k]=prepared_dataloaders[i]
-        i+=1
+    for i, (k, v) in enumerate(dataloaders.items()):
+        dataloaders[k] = prepared_dataloaders[i]
 
-    # print(f"Post: {len(train_dataloader)}")
-    # accelerator.print("初始化完成")
     # ---- 初始化 TensorBoard Tracker ----
     # 只有主进程会初始化 tracker
 
@@ -367,11 +335,8 @@ def main():
         }
     accelerator.init_trackers(project_name="Role-SynthCLIP",config=training_config)
 
-    # accelerator.print("tracker完成")
     # ---- 训练循环 ----
-    # progress_bar = tqdm(range(num_training_steps),main_process_only=True)
     global_step = 1
-    # accelerator.print("tracker完成")
     for epoch in range(config["num_epochs"]):
         model.train()
         for batch in train_dataloader:
@@ -432,15 +397,12 @@ def main():
 
                 # 使用 torch.arange 创建正确的标签
                 labels = torch.arange(global_batch_size, device=accelerator.device)
-                # loss_i = F.cross_entropy(sim_i2t, labels)
                 loss_t = F.cross_entropy(sim_t2i, labels)
                 loss = (loss_i + loss_t) / 2
                 # 5. 反向传播和优化
                 accelerator.backward(loss)
                 optimizer.step()
                 lr_scheduler.step()
-
-
 
             avg_loss = accelerator.gather(loss.detach()).mean().item()
             if accelerator.is_main_process:
@@ -451,7 +413,6 @@ def main():
                 }, step=global_step)
                 accelerator.print(global_step)
 
-            # progress_bar.update(1)
             global_step += 1
             accelerator.print(f"{global_step*torch.cuda.device_count()}/{num_training_steps}已完成,该轮loss为{avg_loss}")
             accelerator.print(f"lr:{lr_scheduler.get_last_lr()[0]}")
@@ -479,9 +440,6 @@ def main():
                 accelerator.log(eval_metric, step=global_step)
                 logger.info(f"Epoch {epoch+1}/{config['num_epochs']} | {dataloader_key} Metrics: {eval_metric}")
             accelerator.print(f"Epoch {epoch+1}/{config['num_epochs']} | {dataloader_key} Metrics: {classification_metric[dataloader_key]}")
-
-
-        # break
 
     # ---- 训练结束 ----
     accelerator.wait_for_everyone() # 等待所有进程完成
